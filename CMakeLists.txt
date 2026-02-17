@@ -1,13 +1,12 @@
 cmake_minimum_required(VERSION 3.16)
 project(ml_concurrency_bench LANGUAGES CXX)
 
-# Use modern C++
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_library(mlbench_lib
-    lib/vec_naive.cpp
+    lib/vec.cpp
 )
 
 target_include_directories(mlbench_lib
@@ -16,8 +15,7 @@ target_include_directories(mlbench_lib
 )
 
 add_library(mlbench_kernels
-    kernels/dot_simple.cpp
-    kernels/dot_parallel.cpp
+    kernels/dot.cpp
 )
 
 target_include_directories(mlbench_kernels
