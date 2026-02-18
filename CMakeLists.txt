@@ -39,6 +39,8 @@ target_link_libraries(mlbench
         mlbench_kernels
 )
 
+target_compile_options(mlbench_kernels PRIVATE -O3 -march=native)
+
 find_package(Threads REQUIRED)
 target_link_libraries(mlbench PRIVATE Threads::Threads)
 target_link_libraries(mlbench_lib PRIVATE Threads::Threads)

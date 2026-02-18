@@ -1,15 +1,18 @@
 #include "bench.h"
 #include <thread>
+#include <cassert>
 
-constexpr uint64_t SIZE = 1e8;
+constexpr uint64_t SIZE = 1e7;
 
 namespace bench {
     void bench_dot() {
-        Vec a(SIZE, 1.0f);
-        Vec b(SIZE, 1.0f);
+        Vec a(SIZE, 2.0f);
+        Vec b(SIZE, 2.0f);
+
         double t_simple = time_function([&] {
             kernels::dot_simple(a, b);
         });
+
 
         uint32_t num_threads = std::thread::hardware_concurrency();
         double t_parallel = time_function([&] {

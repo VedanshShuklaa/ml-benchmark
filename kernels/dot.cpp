@@ -1,5 +1,6 @@
 #include <cstdint>
 #include <immintrin.h>
+#include <pmmintrin.h>
 #include <thread>
 #include <vector>
 #include "../lib/vec.h"
@@ -15,15 +16,23 @@ namespace {
     }
 
     void dot_simd_kernel(const Vec& a, const Vec& b, float* results, uint32_t thread_id, uint32_t start, uint32_t end) {
-        __m128 v1 = _mm_load_ps(a.data() + start);
-        __m128 v2 = _mm_load_ps(b.data() + start);
-
         __m128 sum = _mm_setzero_ps();
-        for (size_t i = start; i < end; i += 4) {
-            __m128 prod = _mm_mul_ps(v1, v2);
+        size_t i = start;
+        for (; i < end; i += 4) {
+            __m128 prod = _mm_mul_ps(_mm_load_ps(a.data() + i), _mm_load_ps(b.data() + i));
             sum = _mm_add_ps(sum, prod);
         }
-        results[thread_id] = _mm_cvtss_f32(sum);
+
+        sum = _mm_hadd_ps(sum, sum);
+        sum = _mm_hadd_ps(sum, sum);
+
+        float result = _mm_cvtss_f32(sum);
+
+        for (; i < end; i++) {
+            result += a[i] * b[i];
+        }
+
+        results[thread_id] = result;
     }
 }
 
@@ -37,15 +46,23 @@ namespace kernels {
     }
 
     float dot_simd(const Vec& a, const Vec& b) {
-        __m128 v1 = _mm_load_ps(a.data());
-        __m128 v2 = _mm_load_ps(b.data());
-
         __m128 sum = _mm_setzero_ps();
-        for (size_t i = 0; i < a.size(); i += 4) {
-            __m128 prod = _mm_mul_ps(v1, v2);
+        size_t i = 0;
+        for (; i + 4 < a.size(); i += 4) {
+            __m128 prod = _mm_mul_ps(_mm_load_ps(a.data() + i), _mm_load_ps(b.data() + i));
             sum = _mm_add_ps(sum, prod);
         }
-        return _mm_cvtss_f32(sum);
+
+        sum = _mm_hadd_ps(sum, sum);
+        sum = _mm_hadd_ps(sum, sum);
+
+        float result = _mm_cvtss_f32(sum);
+        
+        for (size_t i = (a.size() / 4) * 4; i < a.size(); i++) {
+            result += a[i] * b[i];
+        }
+        
+        return result;
     }
 
     float dot_parallel(const Vec& a, const Vec& b, uint32_t num_threads) {
