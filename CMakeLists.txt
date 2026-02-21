@@ -5,8 +5,11 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+find_package(OpenMP REQUIRED)
+
 add_library(mlbench_lib
     lib/vec.cpp
+    lib/mat.cpp
 )
 
 target_include_directories(mlbench_lib
@@ -16,6 +19,7 @@ target_include_directories(mlbench_lib
 
 add_library(mlbench_kernels
     kernels/dot.cpp
+    kernels/gemm.cpp
 )
 
 target_include_directories(mlbench_kernels
@@ -26,6 +30,7 @@ target_include_directories(mlbench_kernels
 add_executable(mlbench
     main.cpp
     bench/bench_dot.cpp
+    bench/bench_gemm.cpp
 )
 
 target_include_directories(mlbench
@@ -45,3 +50,6 @@ find_package(Threads REQUIRED)
 target_link_libraries(mlbench PRIVATE Threads::Threads)
 target_link_libraries(mlbench_lib PRIVATE Threads::Threads)
 target_link_libraries(mlbench_kernels PRIVATE Threads::Threads)
+target_link_libraries(mlbench PRIVATE OpenMP::OpenMP_CXX)
+target_link_libraries(mlbench_lib PRIVATE OpenMP::OpenMP_CXX)
+target_link_libraries(mlbench_kernels PRIVATE OpenMP::OpenMP_CXX)

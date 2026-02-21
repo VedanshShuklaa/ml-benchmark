@@ -5,6 +5,8 @@ double time_function(F&& fn, int runs = 5)
 {
     // warmup
     fn();
+    fn();
+    fn();
 
     double total = 0.0;
 
