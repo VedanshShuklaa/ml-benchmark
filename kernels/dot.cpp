@@ -6,19 +6,23 @@
 #include "../lib/vec.h"
 #include "dot.h"
 
+struct alignas(64) PaddedFloat {
+    float value;
+};
+
 namespace {
-    void dot_simple_kernel(const Vec& a, const Vec& b, float* results, uint32_t thread_id, uint32_t start, uint32_t end) {
+    void dot_simple_kernel(const Vec& a, const Vec& b, PaddedFloat* results, uint32_t thread_id, uint32_t start, uint32_t end) {
         float localSum = 0.0f;
         for(uint32_t i = start; i < end; i++) {
             localSum += a[i] * b[i];
         }
-        results[thread_id] = localSum;
+        results[thread_id].value = localSum;
     }
 
-    void dot_simd_kernel(const Vec& a, const Vec& b, float* results, uint32_t thread_id, uint32_t start, uint32_t end) {
+    void dot_simd_kernel(const Vec& a, const Vec& b, PaddedFloat* results, uint32_t thread_id, uint32_t start, uint32_t end) {
         __m128 sum = _mm_setzero_ps();
         size_t i = start;
-        for (; i < end; i += 4) {
+        for (; i + 3 < end; i += 4) {
             __m128 prod = _mm_mul_ps(_mm_load_ps(a.data() + i), _mm_load_ps(b.data() + i));
             sum = _mm_add_ps(sum, prod);
         }
@@ -32,7 +36,7 @@ namespace {
             result += a[i] * b[i];
         }
 
-        results[thread_id] = result;
+        results[thread_id].value = result;
     }
 }
 
@@ -48,7 +52,7 @@ namespace kernels {
     float dot_simd(const Vec& a, const Vec& b) {
         __m128 sum = _mm_setzero_ps();
         size_t i = 0;
-        for (; i + 4 < a.size(); i += 4) {
+        for (; i + 3 < a.size(); i += 4) {
             __m128 prod = _mm_mul_ps(_mm_load_ps(a.data() + i), _mm_load_ps(b.data() + i));
             sum = _mm_add_ps(sum, prod);
         }
@@ -67,7 +71,11 @@ namespace kernels {
 
     float dot_parallel(const Vec& a, const Vec& b, uint32_t num_threads) {
         std::vector<std::thread> threads(num_threads);
-        std::vector<float> results(num_threads);
+        std::vector<PaddedFloat> results(num_threads);
+
+        for (uint32_t i = 0; i < num_threads; i++) {
+            results[i].value = 0.0f;
+        }
 
         for (uint32_t i = 0; i < num_threads; i++) {
             uint32_t start = i * a.size() / num_threads;
@@ -89,7 +97,7 @@ namespace kernels {
 
         float result = 0.0f;
         for (uint32_t i = 0; i < num_threads; i++) {
-            result += results[i];
+            result += results[i].value;
         }
 
         return result;
@@ -100,7 +108,7 @@ namespace kernels {
             num_threads = 1;
 
         std::vector<std::thread> threads(num_threads);
-        std::vector<float> results(num_threads);
+        std::vector<PaddedFloat> results(num_threads);
 
         for (uint32_t i = 0; i < num_threads; i++) {
             uint32_t start = i * a.size() / num_threads;
@@ -122,7 +130,7 @@ namespace kernels {
 
         float result = 0.0f;
         for (uint32_t i = 0; i < num_threads; i++) {
-            result += results[i];
+            result += results[i].value;
         }
 
         return result;

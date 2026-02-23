@@ -34,6 +34,10 @@ public:
     float* data() { return m_data; }
     const float* data() const { return m_data; }
 
+    Mat transpose();
+
+    Mat transpose() const;
+
 private:
     float* m_data;
 };

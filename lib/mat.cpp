@@ -107,6 +107,30 @@ Mat& Mat::operator=(Mat&& t_other) noexcept {
     return *this;
 }
 
+Mat Mat::transpose() {
+    Mat c = Mat(cols, rows);
+    
+    for (std::size_t i = 0; i < rows; i++) {
+        for (std::size_t j = 0; j < cols; j++) {
+            c.m_data[j * rows + i] = m_data[i * cols + j];
+        }
+    }
+    
+    return c;
+}
+
+Mat Mat::transpose() const {
+    Mat c = Mat(cols, rows);
+    
+    for (std::size_t i = 0; i < rows; i++) {
+        for (std::size_t j = 0; j < cols; j++) {
+            c.m_data[j * rows + i] = m_data[i * cols + j];
+        }
+    }
+    
+    return c;
+}
+
 std::pair<std::size_t, std::size_t> Mat::shape() const {
     return std::make_pair(rows, cols);
 }
